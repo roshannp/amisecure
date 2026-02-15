@@ -107,14 +107,36 @@ export function HomeClient() {
       </form>
 
       {isScanning && (
-        <div style={{ marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            marginBottom: "1.5rem",
+            padding: "1rem",
+            background: "rgba(31, 41, 55, 0.8)",
+            borderRadius: "12px",
+            border: "1px solid #374151",
+          }}
+        >
           <div
             style={{
-              height: "8px",
-              background: "#1f2937",
-              borderRadius: "4px",
-              overflow: "hidden",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: "0.5rem",
+            }}
+          >
+            <span style={{ fontSize: "1rem", fontWeight: 600, color: "#10b981" }}>
+              {Math.round(scanProgress)}%
+            </span>
+            <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+              Scanning...
+            </span>
+          </div>
+          <div
+            style={{
+              height: "12px",
+              background: "#111827",
+              borderRadius: "6px",
+              overflow: "hidden",
             }}
           >
             <div
@@ -122,13 +144,13 @@ export function HomeClient() {
                 height: "100%",
                 width: `${scanProgress}%`,
                 background: "linear-gradient(90deg, #059669, #10b981)",
-                borderRadius: "4px",
+                borderRadius: "6px",
                 transition: "width 0.15s ease-out",
               }}
             />
           </div>
-          <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: 0 }}>
-            {Math.round(scanProgress)}% — discovering subdomains, checking DNS & security headers...
+          <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: "0.5rem 0 0 0" }}>
+            Discovering subdomains → checking DNS → security headers...
           </p>
         </div>
       )}
