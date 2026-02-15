@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { corsHeaders } from "@/lib/cors";
 
 const NVD_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0";
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   if (!techParam) {
     return NextResponse.json(
       { error: "Missing tech parameter (comma-separated)" },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -104,5 +105,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ results });
+  return NextResponse.json({ results }, { headers: corsHeaders });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }

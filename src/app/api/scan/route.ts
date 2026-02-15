@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as dnsPromises } from "dns";
+import { corsHeaders } from "@/lib/cors";
 import tls from "tls";
 
 interface CrtShEntry {
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
   if (!domain) {
     return NextResponse.json(
       { error: "Missing domain parameter" },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -204,7 +205,7 @@ export async function GET(request: NextRequest) {
   if (!domainRegex.test(cleaned)) {
     return NextResponse.json(
       { error: "Invalid domain format" },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -317,14 +318,17 @@ export async function GET(request: NextRequest) {
 
     const scanTime = Date.now() - start;
 
-    return NextResponse.json({
-      domain: rootDomain,
-      subdomains,
-      dns,
-      scanTime,
-      scannedAt: new Date().toISOString(),
-      rootSecurityHeaders,
-    });
+    return NextResponse.json(
+      {
+        domain: rootDomain,
+        subdomains,
+        dns,
+        scanTime,
+        scannedAt: new Date().toISOString(),
+        rootSecurityHeaders,
+      },
+      { headers: corsHeaders }
+    );
   } catch (err) {
     console.error("Scan error:", err);
     return NextResponse.json(
@@ -332,7 +336,14 @@ export async function GET(request: NextRequest) {
         error:
           err instanceof Error ? err.message : "Scan failed. Try again.",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }
