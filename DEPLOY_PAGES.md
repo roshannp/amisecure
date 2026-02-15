@@ -15,7 +15,7 @@ In **roshannp/secureasy** → Settings → Secrets and variables → Actions:
 
 | Secret     | Value |
 |------------|-------|
-| `API_BASE` | Your Vercel URL (e.g. `https://secureasy-xxx.vercel.app`) |
+| `API_BASE` | `https://secureasy.vercel.app` (no trailing slash) |
 
 ## 3. Enable GitHub Pages
 

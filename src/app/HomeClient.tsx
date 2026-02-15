@@ -31,6 +31,13 @@ export function HomeClient() {
   const scanStartRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const recheckApi = () => {
+    if (getApiBase()) {
+      setApiReachable(null);
+      checkApiReachable().then(setApiReachable);
+    }
+  };
+
   useEffect(() => {
     if (getApiBase()) {
       checkApiReachable().then(setApiReachable);
@@ -132,11 +139,37 @@ export function HomeClient() {
             background: "rgba(146, 64, 14, 0.08)",
             color: "#92400e",
             fontSize: "0.875rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            flexWrap: "wrap",
           }}
         >
-          {getApiBase()
-            ? "API unreachable — check API_BASE secret or try again later."
-            : "API not configured — set API_BASE secret in repo Settings → Secrets."}
+          <span>
+            {getApiBase()
+              ? "API unreachable — verify API_BASE points to your Vercel deployment (no trailing slash)."
+              : "API not configured — set API_BASE secret in repo Settings → Secrets."}
+          </span>
+          {getApiBase() && (
+            <button
+              type="button"
+              onClick={recheckApi}
+              style={{
+                padding: "0.35rem 0.75rem",
+                borderRadius: "6px",
+                border: "1px solid #92400e",
+                background: "rgba(255,255,255,0.9)",
+                color: "#92400e",
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
       <form onSubmit={handleScan} style={{ marginBottom: "1.5rem" }}>
