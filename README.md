@@ -20,7 +20,34 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-**Note:** If you see `EMFILE: too many open files` errors on macOS, run `ulimit -n 65536` in your terminal first, or add it to your shell profile. To fix a corrupted dev cache, run `rm -rf .next && npm run dev`.
+### Blank page? Fix it:
+
+1. **Stop everything** — Close all terminals running `npm run dev`, or run:
+   ```bash
+   pkill -f "next dev"
+   ```
+
+2. **Raise file limit** (fixes EMFILE / blank page on macOS):
+   ```bash
+   ulimit -n 65536
+   ```
+
+3. **Clean start**:
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+
+4. **Hard refresh** the browser: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows)
+
+Or use the helper script: `bash scripts/dev.sh`
+
+**Alternative — run production build** (no file watcher, avoids EMFILE):
+```bash
+npm run build
+npm run start
+```
+Then open http://localhost:3000
 
 ## Deploy (free)
 

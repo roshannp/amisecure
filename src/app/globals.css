@@ -14,13 +14,15 @@
   box-sizing: border-box;
 }
 
+/* Override Next.js FOUC hide - prevents blank page when JS fails */
 html, body {
   margin: 0;
   padding: 0;
-  background: #0a0f1a;
+  background: #0a0f1a !important;
   min-height: 100vh;
   color: #e5e7eb;
   font-family: system-ui, -apple-system, sans-serif;
+  display: block !important; /* Don't hide body when JS errors */
 }
 
 @keyframes pulse {

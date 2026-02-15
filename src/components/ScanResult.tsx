@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScanResultData } from "@/app/page";
+import type { ScanResultData } from "@/types";
 import { calculateRiskScore } from "@/lib/riskScore";
 import { saveScan, getPreviousScan, compareScans } from "@/lib/scanHistory";
 import type { ScanDiff } from "@/lib/scanHistory";

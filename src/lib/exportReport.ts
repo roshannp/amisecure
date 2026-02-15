@@ -1,4 +1,4 @@
-import type { ScanResultData } from "@/app/page";
+import type { ScanResultData } from "@/types";
 import type { ActionItem } from "./riskScore";
 
 export function generateHtmlReport(
