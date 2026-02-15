@@ -1,41 +1,28 @@
-# Deploy to amisecure.github.io
+# Deploy to GitHub Pages
 
-The app needs a **backend API** (scan + CVE) because GitHub Pages only hosts static files. Use this flow:
+The app needs a **backend API** (scan + CVE) because GitHub Pages only hosts static files.
 
 ## 1. Deploy the API to Vercel (one-time)
 
 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
 2. Import your repo (roshannp/secureasy)
 3. Deploy (use default settings)
-4. Copy the deployment URL, e.g. `https://secureasy-xxx.vercel.app`
+4. Copy the deployment URL and add it as the `API_BASE` secret
 
-## 2. Create the GitHub Pages repo
-
-1. Create a new repo: **amisecure/amisecure.github.io** (or your org/user)
-2. It can be empty — the workflow will push the built site
-
-## 3. Add secrets to your source repo
+## 2. Add API_BASE secret
 
 In **roshannp/secureasy** → Settings → Secrets and variables → Actions:
 
 | Secret     | Value |
 |------------|-------|
 | `API_BASE` | Your Vercel URL (e.g. `https://secureasy-xxx.vercel.app`) |
-| `DEPLOY_KEY` | See below |
 
-### Create DEPLOY_KEY
+## 3. Enable GitHub Pages
 
-```bash
-# Generate a key pair
-ssh-keygen -t ed25519 -C "github-actions" -f deploy_key -N ""
-
-# Public key → add as Deploy key in amisecure/amisecure.github.io
-# Settings → Deploy keys → Add (paste deploy_key.pub)
-
-# Private key → add as DEPLOY_KEY secret in roshannp/secureasy
-# (paste full contents of deploy_key)
-```
+In **roshannp/secureasy** → Settings → Pages:
+- Source: **Deploy from a branch**
+- Branch: **gh-pages** → **/ (root)**
 
 ## 4. Push to trigger deploy
 
-Push to `main` — the workflow builds the static site and deploys to amisecure.github.io. The site will be live at **https://amisecure.github.io** within a few minutes.
+Push to `main` — the workflow builds the static site and deploys to the `gh-pages` branch. The site will be live at **https://roshannp.github.io/secureasy** within a few minutes.

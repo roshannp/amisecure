@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -24,10 +27,9 @@ jobs:
           NEXT_PUBLIC_API_BASE: ${{ secrets.API_BASE }}
         run: npm run build:pages
 
-      - name: Deploy to amisecure.github.io
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.DEPLOY_KEY }}
-          external_repository: amisecure/amisecure.github.io
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
-          publish_branch: main
+          publish_branch: gh-pages
