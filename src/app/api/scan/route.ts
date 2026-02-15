@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as dns } from "dns";
+import { promises as dnsPromises } from "dns";
 import tls from "tls";
 
 interface CrtShEntry {
@@ -49,23 +49,23 @@ async function resolveDns(
 ): Promise<string[]> {
   try {
     if (recordType === "A") {
-      const addrs = await dns.resolve4(host);
+      const addrs = await dnsPromises.resolve4(host);
       return addrs;
     }
     if (recordType === "AAAA") {
-      const addrs = await dns.resolve6(host);
+      const addrs = await dnsPromises.resolve6(host);
       return addrs;
     }
     if (recordType === "MX") {
-      const mx = await dns.resolveMx(host);
+      const mx = await dnsPromises.resolveMx(host);
       return mx.map((m) => `${m.exchange} (${m.priority})`);
     }
     if (recordType === "TXT") {
-      const txt = await dns.resolveTxt(host);
+      const txt = await dnsPromises.resolveTxt(host);
       return txt.flat();
     }
     if (recordType === "CNAME") {
-      const cname = await dns.resolveCname(host);
+      const cname = await dnsPromises.resolveCname(host);
       return cname;
     }
   } catch {
@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
       toEnrich.map(async (name) => {
         const [ips, certInfo] = await Promise.all([
           Promise.all([
-            dns.resolve4(name).catch(() => [] as string[]),
-            dns.resolve6(name).catch(() => [] as string[]),
+            dnsPromises.resolve4(name).catch(() => [] as string[]),
+            dnsPromises.resolve6(name).catch(() => [] as string[]),
           ]).then(([v4, v6]) => [...v4, ...v6]),
           getCertInfo(name),
         ]);
