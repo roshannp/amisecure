@@ -54,7 +54,15 @@ export function ScanResult({ data }: ScanResultProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      style={{
+        background: "#111827",
+        color: "#e5e7eb",
+        borderRadius: "12px",
+        padding: "1rem",
+      }}
+    >
       {/* Top bar: Score + Export */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="rounded-xl border border-gray-700/50 bg-gray-900/50 p-6">

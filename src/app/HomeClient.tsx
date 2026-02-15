@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ScanResult } from "@/components/ScanResult";
+
+const RESULT_SECTION_ID = "scan-results";
 import { getScanHistory } from "@/lib/scanHistory";
 import type { StoredScan } from "@/lib/scanHistory";
 import type { ScanResultData } from "@/types";
@@ -55,6 +57,13 @@ export function HomeClient() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scan failed");
       setResult(data);
+      // Scroll to results when they appear
+      setTimeout(() => {
+        document.getElementById(RESULT_SECTION_ID)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 300);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -152,6 +161,9 @@ export function HomeClient() {
           <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: "0.5rem 0 0 0" }}>
             Discovering subdomains → checking DNS → security headers...
           </p>
+          <p style={{ fontSize: "0.7rem", color: "#4b5563", margin: "0.25rem 0 0 0" }}>
+            Large domains may take 30+ seconds. If nothing appears, check the browser console for errors.
+          </p>
         </div>
       )}
 
@@ -197,7 +209,21 @@ export function HomeClient() {
         </div>
       )}
 
-      {result && <ScanResult data={result} />}
+      {result && (
+        <div id={RESULT_SECTION_ID} style={{ marginTop: "1.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              color: "#ffffff",
+              marginBottom: "1rem",
+            }}
+          >
+            Results for {result.domain}
+          </h2>
+          <ScanResult data={result} />
+        </div>
+      )}
     </>
   );
 }

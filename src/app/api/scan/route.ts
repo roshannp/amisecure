@@ -238,7 +238,7 @@ export async function GET(request: NextRequest) {
       // ignore
     }
 
-    const toEnrich = subdomainNames.slice(0, 25);
+    const toEnrich = subdomainNames.slice(0, 8);
     const subdomains: SubdomainInfo[] = await Promise.all(
       toEnrich.map(async (name) => {
         const [ips, certInfo] = await Promise.all([
@@ -280,7 +280,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    for (let i = 25; i < subdomainNames.length; i++) {
+    for (let i = 8; i < subdomainNames.length; i++) {
       subdomains.push({
         name: subdomainNames[i],
         ips: [],
