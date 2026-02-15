@@ -58,7 +58,12 @@ export function HomeClient() {
       const url = apiBase
         ? `${apiBase}/api/scan?domain=${encodeURIComponent(cleaned)}`
         : `/api/scan?domain=${encodeURIComponent(cleaned)}`;
-      const res = await fetch(url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2 min
+      const res = await fetch(url, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       let data: unknown;
       try {
         data = await res.json();
@@ -75,7 +80,15 @@ export function HomeClient() {
         });
       }, 300);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg =
+        err instanceof Error
+          ? err.name === "AbortError"
+            ? "Request timed out (try a smaller domain)"
+            : err.message === "Failed to fetch"
+              ? "Cannot reach API. Check your connection or try again later."
+              : err.message
+          : "Something went wrong";
+      setError(msg);
       console.error("Scan error:", err);
     } finally {
       if (intervalRef.current) {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as dnsPromises } from "dns";
 import { corsHeaders } from "@/lib/cors";
+
+export const maxDuration = 60; // Allow up to 60s for domain scans
 import tls from "tls";
 
 interface CrtShEntry {
@@ -343,7 +345,7 @@ export async function GET(request: NextRequest) {
 
 export async function OPTIONS() {
   return new NextResponse(null, {
-    status: 204,
+    status: 200,
     headers: corsHeaders,
   });
 }
