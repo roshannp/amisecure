@@ -20,6 +20,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+**Note:** If you see `EMFILE: too many open files` errors on macOS, run `ulimit -n 65536` in your terminal first, or add it to your shell profile. To fix a corrupted dev cache, run `rm -rf .next && npm run dev`.
+
 ## Deploy (free)
 
 ### Option 1: Vercel (recommended)

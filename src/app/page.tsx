@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScanResult } from "@/components/ScanResult";
 import { getScanHistory } from "@/lib/scanHistory";
+import type { StoredScan } from "@/lib/scanHistory";
 
 export default function Home() {
   const [domain, setDomain] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<StoredScan[]>([]);
 
-  const history = getScanHistory();
+  useEffect(() => {
+    setHistory(getScanHistory());
+  }, [result]);
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
