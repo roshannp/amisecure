@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +20,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate API_BASE secret
+        run: |
+          if [ -z "${{ secrets.API_BASE }}" ]; then
+            echo "::error::API_BASE secret is not set. Add it at: Settings → Secrets and variables → Actions → Repository secrets"
+            echo "Name: API_BASE | Value: https://secureasy.vercel.app (no trailing slash)"
+            exit 1
+          fi
+          echo "API_BASE is configured"
 
       - name: Build for GitHub Pages
         env:
