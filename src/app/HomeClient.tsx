@@ -9,7 +9,8 @@ import { getApiBase } from "@/lib/api";
 
 async function checkApiReachable(): Promise<boolean> {
   const base = getApiBase();
-  if (!base) return false;
+  // When base is "" (Vercel / same-origin), fetch /api/health relative.
+  // When base is set (GitHub Pages → Vercel API), fetch the full URL.
   try {
     const res = await fetch(`${base}/api/health`, { method: "GET" });
     return res.ok;
@@ -32,18 +33,12 @@ export function HomeClient() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const recheckApi = () => {
-    if (getApiBase()) {
-      setApiReachable(null);
-      checkApiReachable().then(setApiReachable);
-    }
+    setApiReachable(null);
+    checkApiReachable().then(setApiReachable);
   };
 
   useEffect(() => {
-    if (getApiBase()) {
-      checkApiReachable().then(setApiReachable);
-    } else {
-      setApiReachable(false);
-    }
+    checkApiReachable().then(setApiReachable);
   }, []);
 
   useEffect(() => {
