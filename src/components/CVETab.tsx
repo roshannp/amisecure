@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getApiBase } from "@/lib/api";
 
 interface CveEntry {
   id: string;
@@ -34,7 +35,7 @@ export function CVETab({ technologies }: CVETabProps) {
     }
 
     setLoading(true);
-    fetch(`/api/cve?tech=${encodeURIComponent(techKey)}`)
+    fetch(`${getApiBase()}/api/cve?tech=${encodeURIComponent(techKey)}`)
       .then((res) => res.json())
       .then((data) => {
         setResults(data.results || []);

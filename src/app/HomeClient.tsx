@@ -5,6 +5,7 @@ import { ScanResult } from "@/components/ScanResult";
 
 const RESULT_SECTION_ID = "scan-results";
 import { getScanHistory } from "@/lib/scanHistory";
+import { getApiBase } from "@/lib/api";
 import type { StoredScan } from "@/lib/scanHistory";
 import type { ScanResultData } from "@/types";
 
@@ -53,7 +54,7 @@ export function HomeClient() {
     setResult(null);
     try {
       const cleaned = domain.trim().replace(/^https?:\/\//, "").split("/")[0];
-      const res = await fetch(`/api/scan?domain=${encodeURIComponent(cleaned)}`);
+      const res = await fetch(`${getApiBase()}/api/scan?domain=${encodeURIComponent(cleaned)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scan failed");
       setResult(data);
