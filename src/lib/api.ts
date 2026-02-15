@@ -2,6 +2,10 @@
 export function getApiBase(): string {
   const base = process.env.NEXT_PUBLIC_API_BASE;
   if (!base || typeof base !== "string") return "";
-  const cleaned = base.trim().replace(/\/+$/, "");
+  let cleaned = base.trim().replace(/\/+$/, "");
+  // Auto-prepend https:// if no protocol given (e.g. "secureasy.vercel.app")
+  if (cleaned && !cleaned.startsWith("http")) {
+    cleaned = `https://${cleaned}`;
+  }
   return cleaned.startsWith("http") ? cleaned : "";
 }
