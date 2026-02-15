@@ -12,6 +12,8 @@ interface SubdomainInfo {
   hasCert: boolean;
   certExpiry?: string;
   certValid: boolean;
+  securityHeaders?: SecurityHeadersResult;
+  technologies?: string[];
 }
 
 interface DnsInfo {
@@ -20,6 +22,83 @@ interface DnsInfo {
   mx: string[];
   txt: string[];
   cname: string[];
+}
+
+interface SecurityHeadersResult {
+  hsts: { present: boolean; value?: string };
+  csp: { present: boolean; value?: string };
+  xFrameOptions: { present: boolean; value?: string };
+  xContentTypeOptions: { present: boolean; value?: string };
+  referrerPolicy: { present: boolean; value?: string };
+  permissionsPolicy: { present: boolean; value?: string };
+  score: number;
+}
+
+function parseSecurityHeaders(headers: Headers): SecurityHeadersResult {
+  const result: SecurityHeadersResult = {
+    hsts: { present: false },
+    csp: { present: false },
+    xFrameOptions: { present: false },
+    xContentTypeOptions: { present: false },
+    referrerPolicy: { present: false },
+    permissionsPolicy: { present: false },
+    score: 0,
+  };
+    const hsts = headers.get("strict-transport-security");
+    const csp = headers.get("content-security-policy");
+    const xfo = headers.get("x-frame-options");
+    const xcto = headers.get("x-content-type-options");
+    const rp = headers.get("referrer-policy");
+    const pp = headers.get("permissions-policy");
+
+    if (hsts) {
+      result.hsts = { present: true, value: hsts.slice(0, 80) };
+      result.score += 25;
+    }
+    if (csp) {
+      result.csp = { present: true, value: csp.slice(0, 80) };
+      result.score += 20;
+    }
+    if (xfo) {
+      result.xFrameOptions = { present: true, value: xfo };
+      result.score += 15;
+    }
+    if (xcto) {
+      result.xContentTypeOptions = { present: true, value: xcto };
+      result.score += 15;
+    }
+    if (rp) {
+      result.referrerPolicy = { present: true, value: rp };
+      result.score += 12;
+    }
+    if (pp) {
+      result.permissionsPolicy = { present: true, value: pp.slice(0, 80) };
+      result.score += 13;
+    }
+  return result;
+}
+
+function detectTechnologies(headers: Headers): string[] {
+  const tech: string[] = [];
+  const server = headers.get("server");
+  const poweredBy = headers.get("x-powered-by");
+  const aspNet = headers.get("x-aspnet-version");
+  const cfRay = headers.get("cf-ray");
+  const xVercel = headers.get("x-vercel-id");
+  const xNetlify = headers.get("x-nf-request-id");
+  const xAmz = headers.get("x-amz-cf-id");
+  const ghPages = headers.get("x-github-request-id");
+
+  if (server) tech.push(server.split("/")[0]);
+  if (poweredBy) tech.push(...poweredBy.split("/")[0].split(" "));
+  if (aspNet) tech.push("ASP.NET");
+  if (cfRay) tech.push("Cloudflare");
+  if (xVercel) tech.push("Vercel");
+  if (xNetlify) tech.push("Netlify");
+  if (xAmz) tech.push("AWS CloudFront");
+  if (ghPages) tech.push("GitHub Pages");
+
+  return [...new Set(tech)].filter(Boolean).slice(0, 8);
 }
 
 async function getSubdomainsFromCrt(domain: string): Promise<string[]> {
@@ -119,8 +198,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Basic validation
-  const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.?$/i;
+  const domainRegex =
+    /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.?$/i;
   const cleaned = domain.toLowerCase().trim();
   if (!domainRegex.test(cleaned)) {
     return NextResponse.json(
@@ -132,11 +211,8 @@ export async function GET(request: NextRequest) {
   const rootDomain = cleaned.startsWith("www.") ? cleaned.slice(4) : cleaned;
 
   try {
-    // 1. Get subdomains from crt.sh
-    const subdomainNames = await getSubdomainsFromCrt(rootDomain);
-
-    // 2. DNS for root domain
-    const [a, aaaa, mx, txt, cname] = await Promise.all([
+    const [subdomainNames, a, aaaa, mx, txt, cname] = await Promise.all([
+      getSubdomainsFromCrt(rootDomain),
       resolveDns(rootDomain, "A"),
       resolveDns(rootDomain, "AAAA"),
       resolveDns(rootDomain, "MX"),
@@ -146,8 +222,23 @@ export async function GET(request: NextRequest) {
 
     const dns: DnsInfo = { a, aaaa, mx, txt, cname };
 
-    // 3. Enrich subdomains (limit to 20 to avoid timeout)
-    const toEnrich = subdomainNames.slice(0, 20);
+    let rootSecurityHeaders: SecurityHeadersResult | undefined;
+    try {
+      const rootRes = await fetch(`https://${rootDomain}`, {
+        method: "HEAD",
+        redirect: "follow",
+        headers: {
+          "User-Agent":
+            "Secureasy-Scanner/1.0 (Security audit; https://secureasy.io)",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      rootSecurityHeaders = parseSecurityHeaders(rootRes.headers);
+    } catch {
+      // ignore
+    }
+
+    const toEnrich = subdomainNames.slice(0, 25);
     const subdomains: SubdomainInfo[] = await Promise.all(
       toEnrich.map(async (name) => {
         const [ips, certInfo] = await Promise.all([
@@ -157,18 +248,39 @@ export async function GET(request: NextRequest) {
           ]).then(([v4, v6]) => [...v4, ...v6]),
           getCertInfo(name),
         ]);
+
+        let securityHeaders: SecurityHeadersResult | undefined;
+        let technologies: string[] | undefined;
+
+        try {
+          const res = await fetch(`https://${name}`, {
+            method: "HEAD",
+            redirect: "follow",
+            headers: {
+              "User-Agent":
+                "Secureasy-Scanner/1.0 (Security audit; https://secureasy.io)",
+            },
+            signal: AbortSignal.timeout(5000),
+          });
+          securityHeaders = parseSecurityHeaders(res.headers);
+          technologies = detectTechnologies(res.headers);
+        } catch {
+          // skip headers/tech for unreachable hosts
+        }
+
         return {
           name,
           ips,
           hasCert: certInfo.hasCert,
           certExpiry: certInfo.expiry,
           certValid: certInfo.valid,
+          securityHeaders,
+          technologies,
         };
       })
     );
 
-    // Add any subdomains beyond 20 with minimal info
-    for (let i = 20; i < subdomainNames.length; i++) {
+    for (let i = 25; i < subdomainNames.length; i++) {
       subdomains.push({
         name: subdomainNames[i],
         ips: [],
@@ -184,6 +296,8 @@ export async function GET(request: NextRequest) {
       subdomains,
       dns,
       scanTime,
+      scannedAt: new Date().toISOString(),
+      rootSecurityHeaders,
     });
   } catch (err) {
     console.error("Scan error:", err);
