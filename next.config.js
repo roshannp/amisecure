@@ -3,8 +3,8 @@ const nextConfig = {
   ...(process.env.BUILD_FOR_PAGES === "1"
     ? {
         output: "export",
-        basePath: "/secureasy",
-        assetPrefix: "/secureasy/",
+        basePath: "/amisecure",
+        assetPrefix: "/amisecure/",
       }
     : {}),
   async headers() {

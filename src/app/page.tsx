@@ -403,7 +403,7 @@ export default function Home() {
             Powered by Certificate Transparency logs &amp; NIST NVD
           </p>
           <a
-            href="https://github.com/roshannp/secureasy"
+            href="https://github.com/roshannp/amisecure"
             target="_blank"
             rel="noopener noreferrer"
             style={{ fontSize: "0.75rem", color: "#9ca3af", textDecoration: "none" }}
