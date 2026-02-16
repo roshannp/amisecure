@@ -113,23 +113,30 @@ function detectTechnologies(headers: Headers): string[] {
 
 async function getSubdomainsFromCrt(domain: string): Promise<string[]> {
   const url = `https://crt.sh/?q=%.${domain}&output=json`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!res.ok) return [];
 
-  const data = (await res.json()) as CrtShEntry[];
-  const names = new Set<string>();
+    const data = (await res.json()) as CrtShEntry[];
+    const names = new Set<string>();
 
-  for (const entry of data) {
-    const parts = entry.name_value.split("\n");
-    for (const part of parts) {
-      const cleaned = part.trim().toLowerCase();
-      if (cleaned && (cleaned === domain || cleaned.endsWith(`.${domain}`))) {
-        names.add(cleaned);
+    for (const entry of data) {
+      const parts = entry.name_value.split("\n");
+      for (const part of parts) {
+        const cleaned = part.trim().toLowerCase();
+        if (cleaned && (cleaned === domain || cleaned.endsWith(`.${domain}`))) {
+          names.add(cleaned);
+        }
       }
     }
-  }
 
-  return Array.from(names).sort();
+    return Array.from(names).sort();
+  } catch (err) {
+    console.error("crt.sh fetch failed:", err);
+    return [];
+  }
 }
 
 async function resolveDns(
