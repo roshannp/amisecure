@@ -52,12 +52,22 @@ export function SecurityHeadersCard({ host, headers }: SecurityHeadersCardProps)
   }
 
   return (
-    <div className="rounded-lg border p-4" style={{ borderColor: "#e5e5e5", background: "#f7f7f8" }}>
-      <div className="flex items-center justify-between">
-        <h3 className="font-mono text-sm font-medium" style={{ color: "#0d0d0d" }}>
+    <div
+      className="rounded-lg border p-4"
+      style={{ borderColor: "#e5e5e5", background: "#f7f7f8", overflow: "hidden", minWidth: 0 }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h3
+          className="font-mono text-sm font-medium truncate"
+          style={{ color: "#0d0d0d", minWidth: 0 }}
+          title={host}
+        >
           {host}
         </h3>
-        <span className="rounded px-2 py-0.5 text-xs" style={{ background: "#e5e5e5", color: "#0d0d0d" }}>
+        <span
+          className="rounded px-2 py-0.5 text-xs shrink-0"
+          style={{ background: "#e5e5e5", color: "#0d0d0d" }}
+        >
           {headers.score}/100
         </span>
       </div>
@@ -71,16 +81,27 @@ export function SecurityHeadersCard({ host, headers }: SecurityHeadersCardProps)
                 <div
                   key={key}
                   className="flex items-start gap-2 text-xs"
+                  style={{ minWidth: 0 }}
                 >
                   <span
                     className="mt-0.5 h-2 w-2 shrink-0 rounded-full"
                     style={{ background: item.present ? "#166534" : "#b91c1c" }}
                   />
-                  <div>
+                  <div style={{ minWidth: 0, overflow: "hidden" }}>
                     <span style={{ color: "#0d0d0d" }}>{label}</span>
                     <span style={{ color: "#6e6e80" }}> — {desc}</span>
                     {item.present && item.value && (
-                      <p className="mt-0.5 truncate font-mono" style={{ color: "#6e6e80" }}>
+                      <p
+                        className="mt-0.5 font-mono"
+                        style={{
+                          color: "#6e6e80",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "100%",
+                        }}
+                        title={item.value}
+                      >
                         {item.value}
                       </p>
                     )}

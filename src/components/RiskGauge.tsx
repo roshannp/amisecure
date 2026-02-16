@@ -9,23 +9,23 @@ export function RiskGauge({
 }) {
   const strokeColor =
     score >= 80
-      ? "#166534"
+      ? "#059669"
       : score >= 60
-        ? "#92400e"
-        : "#b91c1c";
+        ? "#d97706"
+        : "#dc2626";
 
   const circumference = 2 * Math.PI * 45;
   const strokeDash = (score / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <svg className="h-32 w-32 -rotate-90" viewBox="0 0 100 100">
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
+      <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
         <circle
           cx="50"
           cy="50"
           r="45"
           fill="none"
-          stroke="#e5e5e5"
+          stroke="#f3f4f6"
           strokeWidth="8"
         />
         <circle
@@ -41,8 +41,8 @@ export function RiskGauge({
           style={{ transition: "stroke-dashoffset 0.8s ease" }}
         />
       </svg>
-      <div className="text-4xl font-bold" style={{ color: strokeColor }}>{score}</div>
-      <div className="text-sm" style={{ color: "#6e6e80" }}>Security Grade: {grade}</div>
+      <div style={{ fontSize: "1.5rem", fontWeight: 700, color: strokeColor, marginTop: "-0.25rem" }}>{score}</div>
+      <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Grade: {grade}</div>
     </div>
   );
 }

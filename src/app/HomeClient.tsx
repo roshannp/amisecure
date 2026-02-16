@@ -1,16 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ScanResult } from "@/components/ScanResult";
-
-const RESULT_SECTION_ID = "scan-results";
+import { useRouter } from "next/navigation";
 import { getScanHistory } from "@/lib/scanHistory";
 import { getApiBase } from "@/lib/api";
+import type { StoredScan } from "@/lib/scanHistory";
 
 async function checkApiReachable(): Promise<boolean> {
   const base = getApiBase();
-  // When base is "" (Vercel / same-origin), fetch /api/health relative.
-  // When base is set (GitHub Pages → Vercel API), fetch the full URL.
   try {
     const res = await fetch(`${base}/api/health`, { method: "GET" });
     return res.ok;
@@ -18,14 +15,12 @@ async function checkApiReachable(): Promise<boolean> {
     return false;
   }
 }
-import type { StoredScan } from "@/lib/scanHistory";
-import type { ScanResultData } from "@/types";
 
 export function HomeClient() {
+  const router = useRouter();
   const [domain, setDomain] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [result, setResult] = useState<ScanResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<StoredScan[]>([]);
   const [apiReachable, setApiReachable] = useState<boolean | null>(null);
@@ -43,16 +38,14 @@ export function HomeClient() {
 
   useEffect(() => {
     setHistory(getScanHistory());
-  }, [result]);
+  }, []);
 
   useEffect(() => {
     if (isScanning) {
       setScanProgress(0);
       scanStartRef.current = Date.now();
-
       intervalRef.current = setInterval(() => {
         const elapsed = (Date.now() - scanStartRef.current) / 1000;
-        // Slow curve: ~95% at 30s, never quite reaches 100
         const p = 95 * (1 - Math.exp(-elapsed / 12));
         setScanProgress(Math.min(95, p));
       }, 100);
@@ -73,7 +66,6 @@ export function HomeClient() {
     if (!domain.trim()) return;
     setIsScanning(true);
     setError(null);
-    setResult(null);
     try {
       const cleaned = domain.trim().replace(/^https?:\/\//, "").split("/")[0];
       const apiBase = getApiBase();
@@ -81,10 +73,8 @@ export function HomeClient() {
         ? `${apiBase}/api/scan?domain=${encodeURIComponent(cleaned)}`
         : `/api/scan?domain=${encodeURIComponent(cleaned)}`;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 120000); // 2 min
-      const res = await fetch(url, {
-        signal: controller.signal,
-      });
+      const timeout = setTimeout(() => controller.abort(), 120000);
+      const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeout);
       let data: unknown;
       try {
@@ -93,14 +83,8 @@ export function HomeClient() {
         throw new Error("Invalid response from server");
       }
       if (!res.ok) throw new Error((data as { error?: string })?.error || "Scan failed");
-      setResult(data as ScanResultData);
-      // Scroll to results when they appear
-      setTimeout(() => {
-        document.getElementById(RESULT_SECTION_ID)?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 300);
+      sessionStorage.setItem("scan_result", JSON.stringify(data));
+      router.push("/results");
     } catch (err) {
       const msg =
         err instanceof Error
@@ -124,42 +108,42 @@ export function HomeClient() {
 
   return (
     <>
+      {/* API warning */}
       {apiReachable === false && (
         <div
           style={{
             marginBottom: "1rem",
-            padding: "0.75rem 1rem",
-            borderRadius: "8px",
-            border: "1px solid #92400e",
-            background: "rgba(146, 64, 14, 0.08)",
-            color: "#92400e",
-            fontSize: "0.875rem",
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
             gap: "0.75rem",
-            flexWrap: "wrap",
+            borderRadius: "10px",
+            border: "1px solid rgba(251, 191, 36, 0.25)",
+            backgroundColor: "rgba(251, 191, 36, 0.08)",
+            padding: "0.75rem 1rem",
+            fontSize: "0.8125rem",
+            color: "#fbbf24",
           }}
         >
           <span>
             {getApiBase()
-              ? "API unreachable — verify API_BASE points to your Vercel deployment (no trailing slash)."
-              : "API not configured — set API_BASE secret in repo Settings → Secrets."}
+              ? "API unreachable — verify your Vercel deployment is running."
+              : "API not configured — set API_BASE secret in repo settings."}
           </span>
           {getApiBase() && (
             <button
               type="button"
               onClick={recheckApi}
               style={{
-                padding: "0.35rem 0.75rem",
+                padding: "4px 12px",
                 borderRadius: "6px",
-                border: "1px solid #92400e",
-                background: "rgba(255,255,255,0.9)",
-                color: "#92400e",
-                fontSize: "0.8125rem",
+                border: "1px solid rgba(251, 191, 36, 0.3)",
+                backgroundColor: "rgba(251, 191, 36, 0.1)",
+                fontSize: "0.75rem",
                 fontWeight: 500,
+                color: "#fbbf24",
                 cursor: "pointer",
-                whiteSpace: "nowrap",
               }}
             >
               Retry
@@ -167,36 +151,75 @@ export function HomeClient() {
           )}
         </div>
       )}
-      <form onSubmit={handleScan} style={{ marginBottom: "1.5rem" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <input
-            type="text"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            placeholder="Enter domain (e.g. example.com)"
-            disabled={isScanning}
+
+      {/* Scan form */}
+      <form onSubmit={handleScan}>
+        <div
+          style={{
+            display: "flex",
+            overflow: "hidden",
+            borderRadius: "12px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            backgroundColor: "rgba(255,255,255,0.06)",
+            backdropFilter: "blur(8px)",
+            transition: "border-color 0.3s, box-shadow 0.3s",
+          }}
+        >
+          <div
             style={{
+              display: "flex",
               flex: 1,
-              padding: "0.75rem 1rem",
-              borderRadius: "8px",
-              border: "1px solid #e5e5e5",
-              background: "#ffffff",
-              color: "#0d0d0d",
-              fontSize: "1rem",
+              alignItems: "center",
+              gap: "12px",
+              paddingLeft: "16px",
             }}
-          />
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#6b7280"
+              strokeWidth="2"
+              strokeLinecap="round"
+              style={{ flexShrink: 0 }}
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="Enter domain (e.g. example.com)"
+              disabled={isScanning}
+              style={{
+                width: "100%",
+                backgroundColor: "transparent",
+                padding: "14px 0",
+                fontSize: "0.9375rem",
+                color: "#ffffff",
+                border: "none",
+                outline: "none",
+              }}
+            />
+          </div>
           <button
             type="submit"
             disabled={isScanning}
             style={{
-              padding: "0.75rem 1.5rem",
+              margin: "6px",
+              flexShrink: 0,
               borderRadius: "8px",
-              background: "#000000",
-              color: "#ffffff",
+              backgroundColor: "#2563eb",
+              padding: "10px 24px",
+              fontSize: "0.875rem",
               fontWeight: 500,
+              color: "#ffffff",
               border: "none",
               cursor: isScanning ? "not-allowed" : "pointer",
               opacity: isScanning ? 0.6 : 1,
+              transition: "background-color 0.2s",
             }}
           >
             {isScanning ? "Scanning..." : "Scan"}
@@ -204,115 +227,90 @@ export function HomeClient() {
         </div>
       </form>
 
+      {/* Recent scans */}
+      {history.length > 0 && !isScanning && (
+        <div style={{ marginTop: "1rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>Recent:</span>
+          {history.slice(0, 5).map((h) => (
+            <button
+              key={`${h.domain}-${h.scannedAt}`}
+              onClick={() => setDomain(h.domain)}
+              style={{
+                padding: "4px 10px",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backgroundColor: "rgba(255,255,255,0.05)",
+                fontSize: "0.75rem",
+                color: "#9ca3af",
+                cursor: "pointer",
+              }}
+            >
+              {h.domain}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Progress bar */}
       {isScanning && (
         <div
           style={{
-            marginBottom: "1.5rem",
-            padding: "1rem",
-            background: "#f7f7f8",
+            marginTop: "1.25rem",
             borderRadius: "12px",
-            border: "1px solid #e5e5e5",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            padding: "1rem",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.5rem",
-            }}
-          >
-            <span style={{ fontSize: "1rem", fontWeight: 600, color: "#0d0d0d" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#ffffff" }}>
               {Math.round(scanProgress)}%
             </span>
-            <span style={{ fontSize: "0.8rem", color: "#6e6e80" }}>
-              Scanning...
+            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+              Scanning attack surface...
             </span>
           </div>
           <div
             style={{
-              height: "12px",
-              background: "#e5e5e5",
-              borderRadius: "6px",
+              height: "6px",
               overflow: "hidden",
+              borderRadius: "3px",
+              backgroundColor: "rgba(255,255,255,0.08)",
             }}
           >
             <div
               style={{
                 height: "100%",
                 width: `${scanProgress}%`,
-                background: "#0d0d0d",
-                borderRadius: "6px",
+                borderRadius: "3px",
+                background: "linear-gradient(90deg, #2563eb, #3b82f6)",
                 transition: "width 0.15s ease-out",
               }}
             />
           </div>
-          <p style={{ fontSize: "0.75rem", color: "#6e6e80", margin: "0.5rem 0 0 0" }}>
-            Discovering subdomains → checking DNS → security headers...
-          </p>
-          <p style={{ fontSize: "0.7rem", color: "#6e6e80", margin: "0.25rem 0 0 0", opacity: 0.8 }}>
-            Large domains may take 30+ seconds. If nothing appears, check the browser console for errors.
+          <p style={{ marginTop: "10px", fontSize: "0.75rem", color: "#6b7280", margin: "10px 0 0 0" }}>
+            Discovering subdomains &rarr; checking DNS &rarr; security headers &rarr; CVEs
           </p>
         </div>
       )}
 
-      {history.length > 0 && !result && !isScanning && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "0.875rem", color: "#6e6e80", marginBottom: "0.5rem" }}>
-            Recent scans
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {history.slice(0, 5).map((h) => (
-              <button
-                key={`${h.domain}-${h.scannedAt}`}
-                onClick={() => setDomain(h.domain)}
-                style={{
-                  padding: "0.375rem 0.75rem",
-                  borderRadius: "8px",
-                  border: "1px solid #e5e5e5",
-                  background: "#f7f7f8",
-                  color: "#0d0d0d",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
-              >
-                {h.domain}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* Error */}
       {error && (
         <div
           style={{
+            marginTop: "1rem",
+            borderRadius: "10px",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
+            backgroundColor: "rgba(239, 68, 68, 0.08)",
             padding: "0.75rem 1rem",
-            borderRadius: "8px",
-            border: "1px solid #b91c1c",
-            background: "rgba(185, 28, 28, 0.08)",
-            color: "#b91c1c",
-            marginBottom: "1.5rem",
+            fontSize: "0.8125rem",
+            color: "#f87171",
           }}
         >
           {error}
         </div>
       )}
 
-      {result && (
-        <div id={RESULT_SECTION_ID} style={{ marginTop: "1.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              color: "#0d0d0d",
-              marginBottom: "1rem",
-            }}
-          >
-            Results for {result.domain}
-          </h2>
-          <ScanResult data={result} />
-        </div>
-      )}
     </>
   );
 }

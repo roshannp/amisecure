@@ -8,27 +8,71 @@
   --text-primary: #0d0d0d;
   --text-secondary: #6e6e80;
   --border: #e5e5e5;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
 }
 
-/* Force light theme - override any dark mode */
 html {
-  background: #ffffff !important;
   color-scheme: light;
+  scroll-behavior: smooth;
 }
 
-/* Override Next.js FOUC hide + force light theme */
 html, body {
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #ffffff !important;
-  color: #0d0d0d !important;
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  display: block !important;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Scanning pulse */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* Subtle entrance animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; opacity: 0; }
+.animate-delay-200 { animation-delay: 0.2s; opacity: 0; }
+.animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
+
+/* Feature cards */
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  transition: all 0.25s ease;
+}
+
+.feature-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Results page responsive: stack grids on small screens */
+@media (max-width: 768px) {
+  .results-top-row {
+    grid-template-columns: 1fr !important;
+  }
+  .results-bottom-row {
+    grid-template-columns: 1fr !important;
+  }
 }
