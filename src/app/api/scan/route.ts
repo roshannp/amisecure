@@ -111,32 +111,49 @@ function detectTechnologies(headers: Headers): string[] {
   return [...seen.values()].slice(0, 8);
 }
 
+async function fetchCrtSh(url: string): Promise<CrtShEntry[]> {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(45000),
+    headers: {
+      "User-Agent": "AmISecure-Scanner/1.0 (Security audit tool)",
+      "Accept": "application/json",
+    },
+  });
+  if (!res.ok) throw new Error(`crt.sh returned ${res.status}`);
+  return (await res.json()) as CrtShEntry[];
+}
+
 async function getSubdomainsFromCrt(domain: string): Promise<string[]> {
   const url = `https://crt.sh/?q=%.${domain}&output=json`;
-  try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(45000),
-    });
-    if (!res.ok) return [];
+  const maxRetries = 2;
 
-    const data = (await res.json()) as CrtShEntry[];
-    const names = new Set<string>();
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        console.log(`crt.sh retry ${attempt} for ${domain}`);
+      }
 
-    for (const entry of data) {
-      const parts = entry.name_value.split("\n");
-      for (const part of parts) {
-        const cleaned = part.trim().toLowerCase();
-        if (cleaned && (cleaned === domain || cleaned.endsWith(`.${domain}`))) {
-          names.add(cleaned);
+      const data = await fetchCrtSh(url);
+      const names = new Set<string>();
+
+      for (const entry of data) {
+        const parts = entry.name_value.split("\n");
+        for (const part of parts) {
+          const cleaned = part.trim().toLowerCase();
+          if (cleaned && (cleaned === domain || cleaned.endsWith(`.${domain}`))) {
+            names.add(cleaned);
+          }
         }
       }
-    }
 
-    return Array.from(names).sort();
-  } catch (err) {
-    console.error("crt.sh fetch failed:", err);
-    return [];
+      return Array.from(names).sort();
+    } catch (err) {
+      console.error(`crt.sh attempt ${attempt} failed:`, err);
+      if (attempt === maxRetries) return [];
+    }
   }
+  return [];
 }
 
 async function resolveDns(
