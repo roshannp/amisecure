@@ -229,7 +229,7 @@ export default function Home() {
               One scan. Complete visibility.
             </h2>
             <p style={{ marginTop: "0.75rem", fontSize: "1rem", color: "#6b7280" }}>
-              The same reconnaissance an attacker would perform — automated and prioritized for defenders.
+              The same reconnaissance an attacker would perform, automated and prioritized for defenders.
             </p>
           </div>
 
@@ -332,8 +332,8 @@ export default function Home() {
             }}
           >
             {[
-              { step: "1", title: "Enter your domain", desc: "Type any domain name — no login, no setup, no API keys needed." },
-              { step: "2", title: "We scan your surface", desc: "Subdomains, DNS, SSL, headers, technologies, and CVEs — all checked in 15-40 seconds." },
+              { step: "1", title: "Enter your domain", desc: "Type any domain name. No login, no setup, no API keys needed." },
+              { step: "2", title: "We scan your surface", desc: "Subdomains, DNS, SSL, headers, technologies, and CVEs all checked in 15-40 seconds." },
               { step: "3", title: "Get actionable results", desc: "Risk score, letter grade, and prioritized fixes. Download a full HTML report." },
             ].map((item) => (
               <div key={item.step} style={{ textAlign: "center" }}>
